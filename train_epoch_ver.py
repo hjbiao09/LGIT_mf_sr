@@ -122,5 +122,5 @@ class Trainer:
             print(f'Model restored from checkpoint at epoch {self.checkpoint.epoch.numpy()}.')
 
 class YnetTrianer_epoch(Trainer):
-    def __init__(self, model, checkpoint_dir, lr=PiecewiseConstantDecay(boundaries=[5,10], values=[1e-4, 5e-5, 2.5e-5])): #epoch일때 step으로 lr_sc가 정해져 문제임. 해결방안 있나?
+    def __init__(self, model, checkpoint_dir, lr=PiecewiseConstantDecay(boundaries=[200000,400000], values=[1e-4, 5e-5, 2.5e-5])): #epoch일때 step으로 lr_sc가 정해져 문제임. 해결방안 있나?
         super().__init__(model, loss=MeanAbsoluteError(), learning_rate=lr, checkpoint_dir=checkpoint_dir) #없으면 일단 steps로 진행하는게?

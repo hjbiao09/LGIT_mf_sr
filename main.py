@@ -15,9 +15,9 @@ trainer = YnetTrianer(model=Ynet(), checkpoint_dir=f'./ckpt/ynet_two_decoders_st
 
 #train
 trainer.train(train_ds,
-              valid_ds.take(3),
+              valid_ds.take(100), #앞 100개만 valid
               steps=500000,
-              evaluate_every=10)
+              evaluate_every=1000)
 
 # #data_load
 # GoPro_train = GoPro(images_dir="C:/Users/yue95/Desktop/general_deblur/deblur_data/gopro_reset", subset="train", mode="epoch")
