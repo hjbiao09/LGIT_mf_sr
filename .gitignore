@@ -135,3 +135,5 @@ runs/
 results/
 run_backup/
 logs/
+valid/
+ckpt/
