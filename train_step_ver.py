@@ -43,7 +43,7 @@ class Trainer:
 
         self.restore() #해당 모델 restore() 아래 함수있음.
 
-    @property #?
+    @property
     def model(self):
         return self.checkpoint.model
 
@@ -84,6 +84,8 @@ class Trainer:
 
                 self.now = time.perf_counter()
 
+    #텐서플로 2에서는 즉시 실행(eager execution)이 기본적으로 활성화되어 있습니다. 직관적이고 유연한 사용자 인터페이스를 제공하지만 성능과 배포에 비용이 더 듭니다(하나의 연산을 실행할 때는 훨씬 간단하고 빠릅니다).
+    #성능을 높이고 이식성이 좋은 모델을 만들려면 tf.function을 사용해 그래프로 변환하세요.
     @tf.function
     def train_step(self, blur, sharp): #loss backword
         with tf.GradientTape() as tape:
@@ -113,7 +115,7 @@ class Trainer:
             print(f'Model restored from checkpoint at step {self.checkpoint.step.numpy()}.')
 
 class YnetTrianer(Trainer):
-    def __init__(self, model, checkpoint_dir, lr=PiecewiseConstantDecay(boundaries=[100, 200], values=[1e-4, 5e-5, 2.5e-5])):
+    def __init__(self, model, checkpoint_dir, lr=PiecewiseConstantDecay(boundaries=[200000,400000], values=[1e-4, 5e-5, 2.5e-5])):
         super().__init__(model, loss=MeanAbsoluteError(), learning_rate=lr, checkpoint_dir=checkpoint_dir)
 
 
