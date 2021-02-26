@@ -29,9 +29,9 @@ valid_ds = GoPro_valid.dataset(batch_size=1, random_transform=False)
 #model 및 optim
 trainer = YnetTrianer_epoch(model=Ynet(), checkpoint_dir=f'./ckpt/ynet_two_decoders_epoch')
 #train
-trainer.train(train_ds,
-              valid_ds.take(100),
-              total_epoch=1000)
+trainer.train(train_ds.take(10),
+              valid_ds.take(2),
+              total_epoch=1000) #.take(x) 앞에 X개 batch만 사용
 
 # trainer.restore()
 # 마지막 최종 psnr 측정

@@ -25,7 +25,7 @@ def evaluate(model, dataset):
 
 def save_image(model, dataset, epoch):
     if not os.path.exists("./valid"):
-        os.makedir("./valid")
+        os.mkdir("./valid")
     for images, name in dataset:
         lr, sr = images
         sr_batch = resolve(model, lr)
@@ -35,7 +35,7 @@ def save_image(model, dataset, epoch):
         #tensor to numpy and save
         array = tf.keras.preprocessing.image.img_to_array(sr_batch[0])
         rgb = cv2.cvtColor(array, cv2.COLOR_BGR2RGB)
-        cv2.imwrite("./valid/%s"%str(name.numpy()[0])[2:-1], rgb)
+        cv2.imwrite("./valid/%s"%str(name.numpy()[0])[2:-1], rgb) # b' ~~~ \ 로 읽음. need to fix.
 
         if epoch == 0:
             lr_numpy = lr[0].numpy()

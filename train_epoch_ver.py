@@ -54,10 +54,8 @@ class Trainer:
 
         ckpt_mgr = self.checkpoint_manager
         ckpt = self.checkpoint
-        # length = len(list(train_dataset))
         progbar = tf.keras.utils.Progbar(len(train_dataset))
         epoch_start = ckpt.epoch.numpy()
-
 
         for epoch_step in range(total_epoch):
             epoch_idx = epoch_start + epoch_step
@@ -75,19 +73,17 @@ class Trainer:
             self.save_image(valid_dataset, epoch_idx)
             psnr_value = self.evaluate(valid_dataset)
 
-            #tensorboard 저장 현재 tensorboard에서 안나옴 확인 필요.
-            # valid_log_dir = 'logs/gradient_tape/' + current_time + "/valid"
-
             with train_summary_writer.as_default():
                 tf.summary.scalar('loss', loss_value, step=epoch_idx)
                 tf.summary.scalar('PSNR', psnr_value, step=epoch_idx)
-
+            current_lr = self.checkpoint.optimizer._decayed_lr(tf.float32).numpy()
             print(
-                    f'{epoch_idx}/{total_epoch}: loss = {loss_value.numpy(): 3f}, PSNR = {psnr_value.numpy():.4f} ({duration: .2f})s')
+                    f'EPOCH: {epoch_idx}/{total_epoch} loss = {loss_value.numpy(): 3f}, LR = {current_lr: .8f} PSNR = {psnr_value.numpy():.4f} ({duration: .2f})s')
 
-            ckpt.epoch = epoch_idx
+            # ckpt.epoch = epoch_idx
+            ckpt.epoch.assign_add(1)
             ckpt.psnr = psnr_value
-            ckpt_mgr.save(checkpoint_number=ckpt.epoch)
+            ckpt_mgr.save()
 
             self.now = time.perf_counter()
 
@@ -105,7 +101,10 @@ class Trainer:
             # loss = x + y
             loss_value = self.loss(sharp, deblur)
 
+        # Process the gradients, for example cap them, etc.
+        # capped_grads = [MyCapper(g) for g in grads]
         gradients = tape.gradient(loss_value, self.checkpoint.model.trainable_variables) # 그라디언트 생성
+        # Ask the optimizer to apply the processed gradients.
         self.checkpoint.optimizer.apply_gradients(zip(gradients, self.checkpoint.model.trainable_variables)) #그라디언트 backward #왜 zip인지는 의문
         return loss_value
 
@@ -121,5 +120,5 @@ class Trainer:
             print(f'Model restored from checkpoint at epoch {self.checkpoint.epoch.numpy()}.')
 
 class YnetTrianer_epoch(Trainer):
-    def __init__(self, model, checkpoint_dir, lr=PiecewiseConstantDecay(boundaries=[200000,4000000], values=[1e-4, 5e-5, 2.5e-5])): #lr_sch
+    def __init__(self, model, checkpoint_dir, lr=PiecewiseConstantDecay(boundaries=[200000,4000000], values=[1e-4, 5e-5, 2.5e-5])): #lr_sch #epoch 일때 lr어떻게 설명해야하나?
         super().__init__(model, loss=MeanAbsoluteError(), learning_rate=lr, checkpoint_dir=checkpoint_dir)
