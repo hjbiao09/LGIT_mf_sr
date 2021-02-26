@@ -12,7 +12,7 @@ from tqdm import tqdm
 import cv2
 import tensorflow_addons as tfa
 import datetime
-from utils import *
+from utils_epoch import *
 
 class Trainer:
     def __init__(self,
@@ -48,8 +48,10 @@ class Trainer:
         loss_mean = Mean()
 
         #tensorboard
-        current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        train_log_dir = 'logs/gradient_tape/' + current_time + "/train"
+        # current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        # train_log_dir = 'logs/gradient_tape/' + current_time + "/train"
+
+        train_log_dir = 'logs/gradient_tape/ynet/train'
         train_summary_writer = tf.summary.create_file_writer(train_log_dir)
 
         ckpt_mgr = self.checkpoint_manager
@@ -120,5 +122,5 @@ class Trainer:
             print(f'Model restored from checkpoint at epoch {self.checkpoint.epoch.numpy()}.')
 
 class YnetTrianer_epoch(Trainer):
-    def __init__(self, model, checkpoint_dir, lr=PiecewiseConstantDecay(boundaries=[200000,4000000], values=[1e-4, 5e-5, 2.5e-5])): #lr_sch #epoch 일때 lr어떻게 설명해야하나?
-        super().__init__(model, loss=MeanAbsoluteError(), learning_rate=lr, checkpoint_dir=checkpoint_dir)
+    def __init__(self, model, checkpoint_dir, lr=PiecewiseConstantDecay(boundaries=[5,10], values=[1e-4, 5e-5, 2.5e-5])): #epoch일때 step으로 lr_sc가 정해져 문제임. 해결방안 있나?
+        super().__init__(model, loss=MeanAbsoluteError(), learning_rate=lr, checkpoint_dir=checkpoint_dir) #없으면 일단 steps로 진행하는게?

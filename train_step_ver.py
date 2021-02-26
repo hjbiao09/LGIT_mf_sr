@@ -12,46 +12,7 @@ from tqdm import tqdm
 import cv2
 import tensorflow_addons as tfa
 import datetime
-
-def resolve_single(model, lr):
-    return resolve(model, tf.expand_dims(lr, axis=0))[0]
-
-
-def resolve(model, lr_batch):
-    lr_batch = tf.cast(lr_batch, tf.float32)
-    sr_batch = model(lr_batch)
-    sr_batch = tf.clip_by_value(sr_batch, 0, 255)
-    sr_batch = tf.round(sr_batch)
-    sr_batch = tf.cast(sr_batch, tf.uint8)
-    return sr_batch
-
-def evaluate(model, dataset):
-    psnr_values = []
-    for images, name in dataset:
-        lr, hr = images
-        sr = resolve(model, lr)
-        psnr_value = psnr(hr, sr)[0]
-        psnr_values.append(psnr_value)
-    return tf.reduce_mean(psnr_values)
-
-def save_image(model, dataset):
-    for images, name in dataset:
-        lr, sr = images
-        sr_batch = resolve(model, lr)
-        sr_batch = tf.clip_by_value(sr_batch, 0, 255)
-        sr_batch = tf.round(sr_batch)
-        sr_batch = tf.cast(sr_batch, tf.uint8)
-        #tensor to numpy and save
-        array = tf.keras.preprocessing.image.img_to_array(sr_batch[0])
-        rgb = cv2.cvtColor(array, cv2.COLOR_BGR2RGB)
-        cv2.imwrite("./valid/%s"%str(name.numpy()[0])[2:-1], rgb)
-
-        lr_numpy = lr[0].numpy()
-        lr_numpy = cv2.cvtColor(lr_numpy, cv2.COLOR_BGR2RGB)
-        sr_numpy = sr[0].numpy()
-        sr_numpy = cv2.cvtColor(sr_numpy, cv2.COLOR_BGR2RGB)
-        cv2.imwrite("./valid/%s" % str(name.numpy()[0])[2:-5]+"_blur.png", lr_numpy)
-        cv2.imwrite("./valid/%s" % str(name.numpy()[0])[2:-5]+"_sharp.png", sr_numpy)
+from utils_iter import *
 
 def psnr(x1, x2):
     return tf.image.psnr(x1, x2, max_val=255)
@@ -92,25 +53,36 @@ class Trainer:
         ckpt_mgr = self.checkpoint_manager
         ckpt = self.checkpoint
 
+        train_log_dir = 'logs/gradient_tape/ynet_iter/train'
+        train_summary_writer = tf.summary.create_file_writer(train_log_dir)
+        progbar = tf.keras.utils.Progbar((steps - ckpt.step.numpy()))
         self.now = time.perf_counter()
-        for images, name in tqdm(train_dataset.take(steps - ckpt.step.numpy())): #step 일때
+        # for images, name in tqdm(train_dataset.take(steps - ckpt.step.numpy())): #둘다 크게 상관 없음
+        for i, data in enumerate(train_dataset.take(steps - ckpt.step.numpy())):
+            progbar.update(i + 1)
+            images, name = data
             blur, sharp = images
-            ckpt.step.assign_add(1)# step += step
+            ckpt.step.assign_add(1) # step += step
             step = ckpt.step.numpy()
             loss = self.train_step(blur, sharp)  # train 및 loss backward
             loss_mean(loss)
-        loss_value = loss_mean.result()
-        loss_mean.reset_states()
-        duration = time.perf_counter() - self.now
-        self.save_image(valid_dataset)
-        psnr_value = self.evaluate(valid_dataset)
+            if ckpt.step % evaluate_every == 0:
+                loss_value = loss_mean.result()
+                loss_mean.reset_states()
+                duration = time.perf_counter() - self.now
+                self.save_image(valid_dataset, ckpt.step.numpy())
+                psnr_value = self.evaluate(valid_dataset)
 
-        print(
-            f'{step}/{steps}: loss = {loss_value.numpy(): 3f}, PSNR = {psnr_value.numpy():.4f} ({duration: .2f})s')
-        ckpt.psnr = psnr_value
-        ckpt_mgr.save()
+                with train_summary_writer.as_default():
+                    tf.summary.scalar('loss', loss_value, step=ckpt.step.numpy())
+                    tf.summary.scalar('PSNR', psnr_value, step=ckpt.step.numpy())
+                current_lr = self.checkpoint.optimizer._decayed_lr(tf.float32).numpy()
+                print(
+                    f'EPOCH: {step}/{steps} loss = {loss_value.numpy(): 3f}, LR = {current_lr: .8f} PSNR = {psnr_value.numpy():.4f} ({duration:.2f})s')
+                ckpt.psnr = psnr_value
+                ckpt_mgr.save(checkpoint_number=ckpt.step.numpy())
 
-        self.now = time.perf_counter()
+                self.now = time.perf_counter()
 
     @tf.function
     def train_step(self, blur, sharp): #loss backword
@@ -132,16 +104,16 @@ class Trainer:
     def evaluate(self, dataset):
         return evaluate(self.checkpoint.model, dataset)
 
-    def save_image(self, dataset):
-        return save_image(self.checkpoint.model, dataset)
+    def save_image(self, dataset,step):
+        return save_image(self.checkpoint.model, dataset, step)
 
     def restore(self):
         if self.checkpoint_manager.latest_checkpoint: #세이브 파일 주소
             self.checkpoint.restore(self.checkpoint_manager.latest_checkpoint) #세이브 파일 로드
-            print(f'Model restored from checkpoint at stop {self.checkpoint.step.numpy()}.')
+            print(f'Model restored from checkpoint at step {self.checkpoint.step.numpy()}.')
 
 class YnetTrianer(Trainer):
-    def __init__(self, model, checkpoint_dir, lr=PiecewiseConstantDecay(boundaries=[200000,400000], values=[1e-4, 5e-5, 2.5e-5])): #lr_sch
+    def __init__(self, model, checkpoint_dir, lr=PiecewiseConstantDecay(boundaries=[100, 200], values=[1e-4, 5e-5, 2.5e-5])):
         super().__init__(model, loss=MeanAbsoluteError(), learning_rate=lr, checkpoint_dir=checkpoint_dir)
 
 
