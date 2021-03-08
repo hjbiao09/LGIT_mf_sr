@@ -1,15 +1,16 @@
-from gopro_dataloader import GoPro
+from gopro_dataloader import Vimeo
 from train_step_ver import YnetTrianer
 from train_epoch_ver import YnetTrianer_epoch
 from model.YNet import Ynet
 
 #data_load
-GoPro_train = GoPro(images_dir="C:/Users/yue95/Desktop/general_deblur/deblur_data/gopro_reset", subset="train")
-GoPro_valid = GoPro(images_dir="C:/Users/yue95/Desktop/general_deblur/deblur_data/gopro_reset", subset="valid")
+GoPro_train = Vimeo(images_dir="H:/sr_data/vimeo_septuplet/new_sequences", subset="train", scale=2)
+# GoPro_valid = Vimeo(images_dir="H:/sr_data/vimeo_septuplet/new_sequences", subset="valid")
 
 train_ds = GoPro_train.dataset(batch_size=8, random_transform=True)
-valid_ds = GoPro_valid.dataset(batch_size=1, random_transform=False)
+# valid_ds = GoPro_valid.dataset(batch_size=1, random_transform=False)
 
+tt=0
 #model 및 optim
 trainer = YnetTrianer(model=Ynet(), checkpoint_dir=f'./ckpt/ynet_two_decoders_step')
 
