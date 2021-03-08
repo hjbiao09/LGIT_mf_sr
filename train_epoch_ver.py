@@ -10,7 +10,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.optimizers.schedules import PiecewiseConstantDecay
 from tqdm import tqdm
 import cv2
-import tensorflow_addons as tfa
+#import tensorflow_addons as tfa
 import datetime
 from utils_epoch import *
 

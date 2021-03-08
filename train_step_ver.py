@@ -9,8 +9,8 @@ from tensorflow.keras.metrics import Mean
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.optimizers.schedules import PiecewiseConstantDecay
 from tqdm import tqdm
-import cv2
-import tensorflow_addons as tfa
+#import cv2
+#import tensorflow_addons as tfa
 import datetime
 from utils_iter import *
 
@@ -22,8 +22,9 @@ class Trainer:
                  model,
                  loss,
                  learning_rate,
-                 checkpoint_dir='./ckpt/ynet'):
-
+                 checkpoint_dir='./ckpt/ynet',
+                 frame_num=7):
+        self.frame_num=frame_num
         self.now = None
         self.loss = loss
         self.checkpoint = tf.train.Checkpoint(step=tf.Variable(0),
@@ -60,11 +61,17 @@ class Trainer:
         # for images, name in tqdm(train_dataset.take(steps - ckpt.step.numpy())): #둘다 크게 상관 없음
         for i, data in enumerate(train_dataset.take(steps - ckpt.step.numpy())):
             progbar.update(i + 1)
-            images, name = data
-            blur, sharp = images
+            lr_imgs, hr_img = data
+
+            lr1, lr2, lr3, lr4, lr5, lr6, lr7 = tf.split(lr_imgs,7,axis=0)
+            lr_imgs_concat = tf.concat([lr1, lr2, lr3,
+                                        lr4, lr5, lr6, lr7], axis=-1)
+            lr_imgs_concat = lr_imgs_concat[0]
+            #blur, sharp = images:
+
             ckpt.step.assign_add(1) # step += step
             step = ckpt.step.numpy()
-            loss = self.train_step(blur, sharp)  # train 및 loss backward
+            loss = self.train_step(lr_imgs_concat, hr_img)  # train 및 loss backward
             loss_mean(loss)
             if ckpt.step % evaluate_every == 0:
                 loss_value = loss_mean.result()
@@ -87,17 +94,17 @@ class Trainer:
     #텐서플로 2에서는 즉시 실행(eager execution)이 기본적으로 활성화되어 있습니다. 직관적이고 유연한 사용자 인터페이스를 제공하지만 성능과 배포에 비용이 더 듭니다(하나의 연산을 실행할 때는 훨씬 간단하고 빠릅니다).
     #성능을 높이고 이식성이 좋은 모델을 만들려면 tf.function을 사용해 그래프로 변환하세요.
     @tf.function
-    def train_step(self, blur, sharp): #loss backword
+    def train_step(self, lr_imgs_concat, hr_img): #loss backword
         with tf.GradientTape() as tape:
-            blur = tf.cast(blur, tf.float32)
-            sharp = tf.cast(sharp, tf.float32)
+            lr_imgs_concat = tf.cast(lr_imgs_concat, tf.float32)
+            hr_img = tf.cast(hr_img, tf.float32)
 
-            deblur = self.checkpoint.model(blur, training=True) #여기서 weight sharing 할때 모델 공유?
+            out_img = self.checkpoint.model(lr_imgs_concat, training=True) #여기서 weight sharing 할때 모델 공유?
             # e.g.
             # y = model(x)
             # x = model(x)
             # loss = x + y
-            loss_value = self.loss(sharp, deblur)
+            loss_value = self.loss(out_img, hr_img)
 
         gradients = tape.gradient(loss_value, self.checkpoint.model.trainable_variables) # 그라디언트 생성
         self.checkpoint.optimizer.apply_gradients(zip(gradients, self.checkpoint.model.trainable_variables)) #그라디언트 적융 #왜 zip인지는 의문

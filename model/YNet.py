@@ -54,7 +54,8 @@ def DBlock(x_in, filters=64, num_res=8, last=False):
         x = resblock(x, filters=filters)
 
     if last:
-        x = BasicConv(x, filters=3, relu=False)
+        # x = BasicConv(x, filters=12, relu=False)
+        x = BasicConv(x, kernel_size=4, filters=3, transpose=True, stride=(2, 2))
     else:
         x = BasicConv(x, kernel_size=4, filters=filters//2, transpose=True, stride=(2, 2))
 
@@ -68,7 +69,7 @@ def denormalize_255(x):
     return x * 255.0
 
 def Ynet():
-    x_in = Input(shape=(None, None, 3))
+    x_in = Input(shape=(None, None, 21))
     x = Lambda(normalize_01)(x_in)
 
     res_num_encoder = 6
@@ -83,14 +84,17 @@ def Ynet():
     x_d2_1 = DBlock(x_c2_1, filters=2 * base_channels, num_res=res_num_decoder)
     x_c1_1 = BasicConv(Concatenate(axis=3)([x_d2_1, x_e1]), base_channels, kernel_size=1)
     x_out_1 = DBlock(x_c1_1, filters=base_channels, num_res=res_num_decoder, last=True)
-
+    '''
     x_d3_2 = DBlock(x_e3, filters=4 * base_channels, num_res=res_num_decoder)
     x_c2_2 = BasicConv(Concatenate(axis=3)([x_d3_2, x_e2]), 2 * base_channels, kernel_size=1)
     x_d2_2 = DBlock(x_c2_2, filters=2 * base_channels, num_res=res_num_decoder)
     x_c1_2 = BasicConv(Concatenate(axis=3)([x_d2_2, x_e1]), base_channels, kernel_size=1)
     x_out_2 = DBlock(x_c1_2, filters=base_channels, num_res=res_num_decoder, last=True)
-
-    deblur = x + x_out_1 + x_out_2
+    '''
+    #0-3 3-6 6-9 9-12 12-15 15-18 18-21
+    x_input = x[:,:,:,9:12]
+    x_input = Conv2DTranspose(3, kernel_size=4, strides=(2,2), padding="same", use_bias=True)(x_input)
+    deblur = x_input + x_out_1 #+ x_out_2
     deblur = Lambda(denormalize_255)(deblur)
     return Model(x_in, deblur, name="YNet")
 

@@ -44,6 +44,7 @@ class Vimeo:
 
     @staticmethod
     def _multi_images_dataset(image_files, frame_num=7):
+
         ds_list = []
         for i in range(frame_num):
             ds = tf.data.Dataset.from_tensor_slices(image_files[i])
@@ -52,7 +53,13 @@ class Vimeo:
             ds = ds.map(lambda x: tf.image.decode_png(x, channels=3),
                         num_parallel_calls=AUTOTUNE)  # 파일 read후 png로 decode -> 이미지 tensor
             ds_list.append(ds)
-        return ds_list
+        #ds_all = ds_list[0]
+        #for i in range(frame_num-1):
+        #    ds_all = tf.data.Dataset.zip((ds_all, ds_list[i+1]))
+        ds_all = tf.data.Dataset.zip((ds_list[0], ds_list[1], ds_list[2], ds_list[3],
+                                     ds_list[4], ds_list[5], ds_list[6]))
+
+        return ds_all
 
     @staticmethod
     def _images_files_dataset(image_files):
@@ -74,24 +81,24 @@ class Vimeo:
 
     def _lr_image_files(self):
         if self.sacle == 2:
-            images_dir = os.path.join(self.images_dir[:-1], "lr", "2x")
+            images_dir = os.path.join(self.images_dir, "lr", "2x")
         if self.sacle == 4:
-            images_dir = os.path.join(self.images_dir[:-1], "lr", "4x")
+            images_dir = os.path.join(self.images_dir, "lr", "4x")
         # files_list = os.listdir(images_dir)
         lr_data_list = []
         for file_id in range(len(self.list)):
             file_dir = os.path.join(images_dir, self.list[file_id][:-1])
             lr_list = []
 
-            for i in range(-(self.length), self.length):
-                lr_list.append(os.path.join(file_dir, "im%s.png" % str(4 - i)))
-            lr_data_list.append(lr_list)
-        return lr_data_list
+            for i in range(-(self.length), self.length+1):
+                lr_list.append(os.path.join(file_dir, "im%s.png" % str(4 + i)))
+            lr_data_list.append((lr_list))
+        return (lr_data_list)
 
     def _hr_image_files(self):
         images_dir = os.path.join(self.images_dir,"hr")
         files_list = os.listdir(images_dir)
-        return [os.path.join(images_dir, files_list[image_id][:-1], "im4.png") for image_id in range(len(self.list))]
+        return [os.path.join(images_dir, files_list[image_id], "im4.png") for image_id in range(len(self.list))]
 
     def _image_files(self):
         images_dir = os.path.join(self.images_dir,"lr",)

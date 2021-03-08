@@ -7,7 +7,7 @@ from model.YNet import Ynet
 GoPro_train = Vimeo(images_dir="H:/sr_data/vimeo_septuplet/new_sequences", subset="train", scale=2)
 # GoPro_valid = Vimeo(images_dir="H:/sr_data/vimeo_septuplet/new_sequences", subset="valid")
 
-train_ds = GoPro_train.dataset(batch_size=8, random_transform=True)
+train_ds = GoPro_train.dataset(batch_size=2, random_transform=False)
 # valid_ds = GoPro_valid.dataset(batch_size=1, random_transform=False)
 
 tt=0
@@ -16,7 +16,7 @@ trainer = YnetTrianer(model=Ynet(), checkpoint_dir=f'./ckpt/ynet_two_decoders_st
 
 #train
 trainer.train(train_ds,
-              valid_ds.take(100), #앞 100개만 valid
+              train_ds.take(100), #앞 100개만 valid
               steps=500000,
               evaluate_every=1000)
 
