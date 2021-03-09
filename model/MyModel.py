@@ -104,15 +104,10 @@ def Mymodel(scale=2):
     x_c1_1 = BasicConv(Concatenate(axis=3)([x_d2_1, x_e1]), base_channels, kernel_size=1)
     x_out_1 = DBlock(x_c1_1, filters=base_channels, num_res=res_num_decoder, last=True)
     x_out_ps = pixel_shuffle(scale=scale)(x_out_1)
-    # x_d3_2 = DBlock(x_e3, filters=4 * base_channels, num_res=res_num_decoder)
-    # x_c2_2 = BasicConv(Concatenate(axis=3)([x_d3_2, x_e2]), 2 * base_channels, kernel_size=1)
-    # x_d2_2 = DBlock(x_c2_2, filters=2 * base_channels, num_res=res_num_decoder)
-    # x_c1_2 = BasicConv(Concatenate(axis=3)([x_d2_2, x_e1]), base_channels, kernel_size=1)
-    # x_out_2 = DBlock(x_c1_2, filters=base_channels, num_res=res_num_decoder, last=True)
 
     deblur = lr4_up + x_out_ps #+ x_out_2
     deblur = Lambda(denormalize_255)(deblur)
-    return Model(inputs=[x1, x2, x3, x4, x5, x6, x7], outputs=deblur, name="YNet")
+    return Model(inputs=[x1, x2, x3, x4, x5, x6, x7], outputs=deblur, name="UNet")
 
 
 
