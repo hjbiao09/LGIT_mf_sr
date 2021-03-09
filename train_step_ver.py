@@ -61,16 +61,16 @@ class Trainer:
         for i, data in enumerate(train_dataset.take(steps - ckpt.step.numpy())):
             progbar.update(i + 1)
             images = data
-            blur, sharp = images
+            lr1, lr2, lr3, lr4, lr5, lr6, lr7, hr = images
             ckpt.step.assign_add(1) # step += step
             step = ckpt.step.numpy()
-            loss = self.train_step(blur, sharp)  # train 및 loss backward
+            loss = self.train_step(lr1, lr2, lr3, lr4, lr5, lr6, lr7, hr)  # train 및 loss backward
             loss_mean(loss)
             if ckpt.step % evaluate_every == 0:
                 loss_value = loss_mean.result()
                 loss_mean.reset_states()
                 duration = time.perf_counter() - self.now
-                self.save_image(valid_dataset, ckpt.step.numpy())
+                self.save_image(valid_dataset, ckpt.step.numpy(), evaluate_every)
                 psnr_value = self.evaluate(valid_dataset)
 
                 with train_summary_writer.as_default():
@@ -87,17 +87,24 @@ class Trainer:
     #텐서플로 2에서는 즉시 실행(eager execution)이 기본적으로 활성화되어 있습니다. 직관적이고 유연한 사용자 인터페이스를 제공하지만 성능과 배포에 비용이 더 듭니다(하나의 연산을 실행할 때는 훨씬 간단하고 빠릅니다).
     #성능을 높이고 이식성이 좋은 모델을 만들려면 tf.function을 사용해 그래프로 변환하세요.
     @tf.function
-    def train_step(self, blur, sharp): #loss backword
+    def train_step(self, lr1, lr2, lr3, lr4, lr5, lr6, lr7, hr): #loss backword
         with tf.GradientTape() as tape:
-            blur = tf.cast(blur, tf.float32)
-            sharp = tf.cast(sharp, tf.float32)
+            lr1 = tf.cast(lr1, tf.float32)
+            lr2 = tf.cast(lr2, tf.float32)
+            lr3 = tf.cast(lr3, tf.float32)
+            lr4 = tf.cast(lr4, tf.float32)
+            lr5 = tf.cast(lr5, tf.float32)
+            lr6 = tf.cast(lr6, tf.float32)
+            lr7 = tf.cast(lr7, tf.float32)
+            hr = tf.cast(hr, tf.float32)
 
-            deblur = self.checkpoint.model(blur, training=True) #여기서 weight sharing 할때 모델 공유?
+            result = self.checkpoint.model(inputs=[lr1, lr2, lr3, lr4, lr5, lr6, lr7], training=True) #여기서 weight sharing 할때 모델 공유?
             # e.g.
             # y = model(x)
             # x = model(x)
             # loss = x + y
-            loss_value = self.loss(sharp, deblur)
+
+            loss_value = self.loss(result, hr)
 
         gradients = tape.gradient(loss_value, self.checkpoint.model.trainable_variables) # 그라디언트 생성
         self.checkpoint.optimizer.apply_gradients(zip(gradients, self.checkpoint.model.trainable_variables)) #그라디언트 적융 #왜 zip인지는 의문
@@ -106,8 +113,8 @@ class Trainer:
     def evaluate(self, dataset):
         return evaluate(self.checkpoint.model, dataset)
 
-    def save_image(self, dataset,step):
-        return save_image(self.checkpoint.model, dataset, step)
+    def save_image(self, dataset,step, first_step):
+        return save_image(self.checkpoint.model, dataset, step, first_step=first_step)
 
     def restore(self):
         if self.checkpoint_manager.latest_checkpoint: #세이브 파일 주소
