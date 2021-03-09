@@ -30,7 +30,8 @@ class Vimeo:
         # ds = tf.data.Dataset.zip((ds, self.name_dataset())) # 파일 이름 추가
         ds = ds.batch(batch_size)
         if self.mode == "step":
-            ds = ds.repeat(repeat_count) #if repeat_count= None or -1 repeated indefinitely
+            if self.subset == 'train':
+                ds = ds.repeat(repeat_count) #if repeat_count= None or -1 repeated indefinitely
             # step 으로 사용시 repeat(None)
         ds = ds.prefetch(buffer_size=AUTOTUNE) #미리 가져오기
         return ds

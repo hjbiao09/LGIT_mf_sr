@@ -22,11 +22,12 @@ def resolve(model, lr1, lr2, lr3, lr4, lr5, lr6, lr7):
 
 def evaluate(model, dataset):
     psnr_values = []
-    for images in dataset:
+    for i, images in enumerate(dataset):
         lr1, lr2, lr3, lr4, lr5, lr6, lr7, hr = images
         sr = resolve(model, lr1, lr2, lr3, lr4, lr5, lr6, lr7)
         psnr_value = psnr(hr, sr)[0]
         psnr_values.append(psnr_value)
+        print('\r%04d images are evaluated.' % i, end=' ')
     return tf.reduce_mean(psnr_values)
 
 def save_image(model, dataset, step, first_step=100):
