@@ -17,9 +17,10 @@ trainer = YnetTrianer(model=Mymodel(scale=scale), checkpoint_dir=f'./ckpt/Unet_s
 
 #train
 trainer.train(train_ds,
-              valid_ds.take(1000), #앞 100개만 valid
+              # valid_ds.take(1000), #앞 1000개만 valid
+              valid_ds,
               steps=500000,
-              evaluate_every=100)
+              evaluate_every=10000)
 
 # 마지막 최종 psnr 측정
 psnr = trainer.evaluate(valid_ds)

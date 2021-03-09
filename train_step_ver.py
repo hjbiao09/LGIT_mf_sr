@@ -22,7 +22,7 @@ class Trainer:
                  model,
                  loss,
                  learning_rate,
-                 checkpoint_dir='./ckpt/ynet'):
+                 checkpoint_dir='./ckpt/unet'):
 
         self.now = None
         self.loss = loss
@@ -37,6 +37,7 @@ class Trainer:
         self.checkpoint_manager = tf.train.CheckpointManager(checkpoint=self.checkpoint,
                                                              directory=checkpoint_dir,
                                                              max_to_keep=3)
+        self.checkpoint_dir=checkpoint_dir
         # 단순 checkpoint로 저장시 나중에 대량의 save파일이 존재 할 수 있음.
         # 그걸 방지하지 위한 checkpointmanager 최후의 max_to_keep 개의 파일만 저장해줌.
         # 사용시 바로 self.checkpoint_manager.save() 혹은 self.checkpoint_manager.save(checkpoint_number=100)
@@ -53,7 +54,7 @@ class Trainer:
         ckpt_mgr = self.checkpoint_manager
         ckpt = self.checkpoint
 
-        train_log_dir = 'logs/gradient_tape/ynet_iter/train'
+        train_log_dir = 'logs/gradient_tape/%s/train'%self.checkpoint_dir.split("/")[-1]
         train_summary_writer = tf.summary.create_file_writer(train_log_dir)
         progbar = tf.keras.utils.Progbar((steps - ckpt.step.numpy()))
         self.now = time.perf_counter()
