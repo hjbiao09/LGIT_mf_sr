@@ -4,20 +4,20 @@ from train_epoch_ver import YnetTrianer_epoch
 from model.YNet import Ynet
 
 #data_load
-GoPro_train = GoPro(images_dir="C:/Users/yue95/Desktop/general_deblur/deblur_data/gopro_reset", subset="train")
-GoPro_valid = GoPro(images_dir="C:/Users/yue95/Desktop/general_deblur/deblur_data/gopro_reset", subset="valid")
+GoPro_train = GoPro(images_dir="H:/sr_data/vimeo_septuplet/new_sequences", subset="train")
+GoPro_valid = GoPro(images_dir="H:/sr_data/vimeo_septuplet/new_sequences", subset="test")
 
-train_ds = GoPro_train.dataset(batch_size=8, random_transform=True)
+train_ds = GoPro_train.dataset(batch_size=2, random_transform=False)
 valid_ds = GoPro_valid.dataset(batch_size=1, random_transform=False)
 
 #model 및 optim
-trainer = YnetTrianer(model=Ynet(), checkpoint_dir=f'./ckpt/ynet_two_decoders_step')
+trainer = YnetTrianer(model=Ynet(), checkpoint_dir=f'./ckpt/Unet_step')
 
 #train
 trainer.train(train_ds,
               valid_ds.take(100), #앞 100개만 valid
               steps=500000,
-              evaluate_every=1000)
+              evaluate_every=100)
 
 # #data_load
 # GoPro_train = GoPro(images_dir="C:/Users/yue95/Desktop/general_deblur/deblur_data/gopro_reset", subset="train", mode="epoch")

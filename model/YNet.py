@@ -1,6 +1,7 @@
 from tensorflow.python.keras.layers import Add, Conv2D, Input, Lambda, Conv2DTranspose, BatchNormalization
 from tensorflow.python.keras.layers import Activation, Concatenate
 from tensorflow.python.keras.models import Model
+import tensorflow as tf
 
 # #다른 형태
 # class MyModel(Model):
@@ -71,9 +72,12 @@ def Ynet():
     x_in = Input(shape=(None, None, 3))
     x = Lambda(normalize_01)(x_in)
 
+    x_size = tf.shape(x)
+    x_up = tf.image.resize(x, size=[x_size[1]*2, x_size[2]*2])
+
     res_num_encoder = 6
     base_channels = 32
-    x_e1 = EBlock(x, filters=base_channels, num_res=res_num_encoder, first=True)
+    x_e1 = EBlock(x_up, filters=base_channels, num_res=res_num_encoder, first=True)
     x_e2 = EBlock(x_e1, filters=2 * base_channels, num_res=res_num_encoder)
     x_e3 = EBlock(x_e2, filters=4 * base_channels, num_res=res_num_encoder)
 
@@ -84,13 +88,13 @@ def Ynet():
     x_c1_1 = BasicConv(Concatenate(axis=3)([x_d2_1, x_e1]), base_channels, kernel_size=1)
     x_out_1 = DBlock(x_c1_1, filters=base_channels, num_res=res_num_decoder, last=True)
 
-    x_d3_2 = DBlock(x_e3, filters=4 * base_channels, num_res=res_num_decoder)
-    x_c2_2 = BasicConv(Concatenate(axis=3)([x_d3_2, x_e2]), 2 * base_channels, kernel_size=1)
-    x_d2_2 = DBlock(x_c2_2, filters=2 * base_channels, num_res=res_num_decoder)
-    x_c1_2 = BasicConv(Concatenate(axis=3)([x_d2_2, x_e1]), base_channels, kernel_size=1)
-    x_out_2 = DBlock(x_c1_2, filters=base_channels, num_res=res_num_decoder, last=True)
+    # x_d3_2 = DBlock(x_e3, filters=4 * base_channels, num_res=res_num_decoder)
+    # x_c2_2 = BasicConv(Concatenate(axis=3)([x_d3_2, x_e2]), 2 * base_channels, kernel_size=1)
+    # x_d2_2 = DBlock(x_c2_2, filters=2 * base_channels, num_res=res_num_decoder)
+    # x_c1_2 = BasicConv(Concatenate(axis=3)([x_d2_2, x_e1]), base_channels, kernel_size=1)
+    # x_out_2 = DBlock(x_c1_2, filters=base_channels, num_res=res_num_decoder, last=True)
 
-    deblur = x + x_out_1 + x_out_2
+    deblur = x_up + x_out_1 #+ x_out_2
     deblur = Lambda(denormalize_255)(deblur)
     return Model(x_in, deblur, name="YNet")
 

@@ -4,23 +4,28 @@ import tensorflow as tf
 from tensorflow.python.data.experimental import AUTOTUNE
 
 class GoPro:
-    def __init__(self, images_dir="C:/Users/yue95/Desktop/general_deblur/deblur_data/gopro_reset", subset='train', mode="step"):
+    def __init__(self, images_dir="C:/Users/yue95/Desktop/general_deblur/deblur_data/gopro_reset", subset='train', mode="step", scale=2):
         self.subset = subset
         self.images_dir = os.path.join(images_dir, self.subset)
         self.mode = mode
+        self.scale = scale
+
+        f = open("./data_list/%s_list.txt" % self.subset)
+        self.list = f.readlines()
 
     def __len__(self):
-        return len(os.path.join(self.images_dir, self.subset, "blur"))
+        return len(self.list)
+
 
     def dataset(self, batch_size=16, repeat_count=None, random_transform=True):
-        ds = tf.data.Dataset.zip((self.blur_dataset(), self.sharp_dataset()))
+        ds = tf.data.Dataset.zip((self.lr_dataset(), self.hr_dataset()))
         if random_transform:
             # ds = ds.map(lambda blur, sharp: random_crop(blur, sharp), num_parallel_calls=AUTOTUNE) #num_parallel_calls? #람다 필요?
             ds = ds.map(random_crop, num_parallel_calls=AUTOTUNE) #이것도 됨 위와 차이 없음.
             ds = ds.map(random_rotate, num_parallel_calls=AUTOTUNE)
             ds = ds.map(random_flip, num_parallel_calls=AUTOTUNE)
 
-        ds = tf.data.Dataset.zip((ds, self.name_dataset())) # 파일 이름 추가
+        # ds = tf.data.Dataset.zip((ds, self.name_dataset())) # 파일 이름 추가
         ds = ds.batch(batch_size)
         if self.mode == "step":
             ds = ds.repeat(repeat_count) #if repeat_count= None or -1 repeated indefinitely
@@ -46,28 +51,28 @@ class GoPro:
         ds = self._images_files_dataset(self._image_files())
         return ds
 
-    def blur_dataset(self):
-        ds = self._images_dataset(self._blur_image_files())
+    def lr_dataset(self):
+        ds = self._images_dataset(self._lr_image_files())
         return ds
 
-    def sharp_dataset(self):
-        ds = self._images_dataset(self._sharp_image_files())
+    def hr_dataset(self):
+        ds = self._images_dataset(self._hr_image_files())
         return ds
 
-    def _blur_image_files(self):
-        images_dir = os.path.join(self.images_dir,"blur")
+    def _lr_image_files(self,num=4,):
+        images_dir = os.path.join(self.images_dir, "lr/%sx" % self.scale)
         files_list = os.listdir(images_dir)
-        return [os.path.join(images_dir, files_list[image_id]) for image_id in range(len(files_list))]
+        return [os.path.join(images_dir, files_list[image_id], "im%d.png" % num) for image_id in range(len(self.list))]
 
-    def _sharp_image_files(self):
-        images_dir = os.path.join(self.images_dir,"sharp")
+    def _hr_image_files(self):
+        images_dir = os.path.join(self.images_dir, "hr")
         files_list = os.listdir(images_dir)
-        return [os.path.join(images_dir, files_list[image_id]) for image_id in range(len(files_list))]
+        return [os.path.join(images_dir, files_list[image_id], "im4.png") for image_id in range(len(self.list))]
 
     def _image_files(self):
-        images_dir = os.path.join(self.images_dir,"blur")
+        images_dir = os.path.join(self.images_dir, "hr")
         files_list = os.listdir(images_dir)
-        return [files_list[image_id] for image_id in range(len(files_list))]
+        return [files_list[image_id] +"_im4.png" for image_id in range(len(self.list))]
 
     @staticmethod # 모름
     def _populate_cache(ds, cache_file):

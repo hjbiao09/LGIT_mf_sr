@@ -60,7 +60,7 @@ class Trainer:
         # for images, name in tqdm(train_dataset.take(steps - ckpt.step.numpy())): #둘다 크게 상관 없음
         for i, data in enumerate(train_dataset.take(steps - ckpt.step.numpy())):
             progbar.update(i + 1)
-            images, name = data
+            images = data
             blur, sharp = images
             ckpt.step.assign_add(1) # step += step
             step = ckpt.step.numpy()

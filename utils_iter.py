@@ -16,7 +16,7 @@ def resolve(model, lr_batch):
 
 def evaluate(model, dataset):
     psnr_values = []
-    for images, name in dataset:
+    for images in dataset:
         lr, hr = images
         sr = resolve(model, lr)
         psnr_value = psnr(hr, sr)[0]
@@ -26,7 +26,7 @@ def evaluate(model, dataset):
 def save_image(model, dataset, step):
     if not os.path.exists("./valid"):
         os.mkdir("./valid")
-    for images, name in dataset:
+    for i, images in enumerate(dataset):
         lr, sr = images
         sr_batch = resolve(model, lr)
         sr_batch = tf.clip_by_value(sr_batch, 0, 255)
@@ -35,15 +35,15 @@ def save_image(model, dataset, step):
         #tensor to numpy and save
         array = tf.keras.preprocessing.image.img_to_array(sr_batch[0])
         rgb = cv2.cvtColor(array, cv2.COLOR_BGR2RGB)
-        cv2.imwrite("./valid/%s"%str(name.numpy()[0])[2:-1], rgb) # b' ~~~ \ 로 읽음. need to fix.
+        cv2.imwrite("./valid/%04d_results.png"%i, rgb) # b' ~~~ \ 로 읽음. need to fix.
 
         if step == 0:
             lr_numpy = lr[0].numpy()
             lr_numpy = cv2.cvtColor(lr_numpy, cv2.COLOR_BGR2RGB)
             sr_numpy = sr[0].numpy()
             sr_numpy = cv2.cvtColor(sr_numpy, cv2.COLOR_BGR2RGB)
-            cv2.imwrite("./valid/%s" % str(name.numpy()[0])[2:-5] + "_blur.png", lr_numpy)
-            cv2.imwrite("./valid/%s" % str(name.numpy()[0])[2:-5] + "_sharp.png", sr_numpy)
+            cv2.imwrite("./valid/%04d" % i + "_lr.png", lr_numpy)
+            cv2.imwrite("./valid/%04d" % i + "_hr.png", sr_numpy)
 
 
 def psnr(x1, x2):
