@@ -63,7 +63,7 @@ class Vimeo:
         return ds
 
     def _lr_image_files(self, num=1,):
-        images_dir = os.path.join(self.images_dir, "lr/%sx" % self.scale)
+        images_dir = os.path.join(self.images_dir, "lr/%sx" % str(self.scale))
         files_list = os.listdir(images_dir)
         return [os.path.join(images_dir, files_list[image_id], "im%d.png" % num) for image_id in range(len(self.list))]
 

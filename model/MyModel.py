@@ -48,14 +48,14 @@ def EBlock(x_in, filters=64, num_res=8, first=False):
     return x
 
 
-def DBlock(x_in, filters=64, num_res=8, last=False):
+def DBlock(x_in, filters=64, num_res=8, last=False, scale=2):
     x = x_in
 
     for i in range(num_res):
         x = resblock(x, filters=filters)
 
     if last:
-        x = BasicConv(x, filters=12, relu=False)
+        x = BasicConv(x, filters=3*scale**2, relu=False)
     else:
         x = BasicConv(x, kernel_size=4, filters=filters//2, transpose=True, stride=(2, 2))
 
@@ -89,10 +89,10 @@ def Mymodel(scale=2):
     lr_concat = Concatenate(axis=3)([lr1, lr2, lr3, lr4, lr5, lr6, lr7])
 
     lr_size = tf.shape(lr4)
-    lr4_up = tf.image.resize(lr4, size=[lr_size[1]*2, lr_size[2]*2])
+    lr4_up = tf.image.resize(lr4, size=[lr_size[1]*scale, lr_size[2]*scale])
 
     res_num_encoder = 6
-    base_channels = 32
+    base_channels = 48
     x_e1 = EBlock(lr_concat, filters=base_channels, num_res=res_num_encoder, first=True)
     x_e2 = EBlock(x_e1, filters=2 * base_channels, num_res=res_num_encoder)
     x_e3 = EBlock(x_e2, filters=4 * base_channels, num_res=res_num_encoder)

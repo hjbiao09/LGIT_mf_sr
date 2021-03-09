@@ -30,9 +30,10 @@ def evaluate(model, dataset):
         print('\r%04d images are evaluated.' % i, end=' ')
     return tf.reduce_mean(psnr_values)
 
-def save_image(model, dataset, step, first_step=100):
-    if not os.path.exists("./valid"):
-        os.mkdir("./valid")
+def save_image(model, dataset, step, first_step=100, folder_name="model_name"):
+    path = os.path.join("./valid/" + folder_name)
+    if not os.path.exists(path):
+        os.mkdir(path)
     for i, images in enumerate(dataset):
         lr1, lr2, lr3, lr4, lr5, lr6, lr7, hr = images
         sr_batch = resolve(model, lr1, lr2, lr3, lr4, lr5, lr6, lr7)
@@ -42,15 +43,15 @@ def save_image(model, dataset, step, first_step=100):
         #tensor to numpy and save
         array = tf.keras.preprocessing.image.img_to_array(sr_batch[0])
         rgb = cv2.cvtColor(array, cv2.COLOR_BGR2RGB)
-        cv2.imwrite("./valid/%04d_results.png"%i, rgb) # b' ~~~ \ 로 읽음. need to fix.
+        cv2.imwrite(os.path.join(path , "%04d_results.png"%i), rgb) # b' ~~~ \ 로 읽음. need to fix.
         print('\r%04d images are restorated.'%i, end=' ')
         if step == first_step:
             lr_numpy = lr4[0].numpy()
             lr_numpy = cv2.cvtColor(lr_numpy, cv2.COLOR_BGR2RGB)
             sr_numpy = hr[0].numpy()
             sr_numpy = cv2.cvtColor(sr_numpy, cv2.COLOR_BGR2RGB)
-            cv2.imwrite("./valid/%04d" % i + "_lr.png", lr_numpy)
-            cv2.imwrite("./valid/%04d" % i + "_hr.png", sr_numpy)
+            cv2.imwrite(os.path.join(path , "%04d" % i + "_lr.png"), lr_numpy)
+            cv2.imwrite(os.path.join(path , "%04d" % i + "_hr.png"), sr_numpy)
 
 
 def psnr(x1, x2):

@@ -71,7 +71,7 @@ class Trainer:
                 loss_value = loss_mean.result()
                 loss_mean.reset_states()
                 duration = time.perf_counter() - self.now
-                self.save_image(valid_dataset, ckpt.step.numpy(), evaluate_every)
+                self.save_image(valid_dataset, ckpt.step.numpy(), evaluate_every, folder_name=self.checkpoint_dir.split("/")[-1])
                 psnr_value = self.evaluate(valid_dataset)
 
                 with train_summary_writer.as_default():
@@ -114,8 +114,8 @@ class Trainer:
     def evaluate(self, dataset):
         return evaluate(self.checkpoint.model, dataset)
 
-    def save_image(self, dataset,step, first_step):
-        return save_image(self.checkpoint.model, dataset, step, first_step=first_step)
+    def save_image(self, dataset,step, first_step, folder_name):
+        return save_image(self.checkpoint.model, dataset, step, first_step=first_step, folder_name=folder_name)
 
     def restore(self):
         if self.checkpoint_manager.latest_checkpoint: #세이브 파일 주소
@@ -123,7 +123,7 @@ class Trainer:
             print(f'Model restored from checkpoint at step {self.checkpoint.step.numpy()}.')
 
 class YnetTrianer(Trainer):
-    def __init__(self, model, checkpoint_dir, lr=PiecewiseConstantDecay(boundaries=[200000,400000], values=[1e-4, 5e-5, 2.5e-5])):
+    def __init__(self, model, checkpoint_dir, lr=PiecewiseConstantDecay(boundaries=[100000,300000], values=[1e-4, 5e-5, 2.5e-5])):
         super().__init__(model, loss=MeanAbsoluteError(), learning_rate=lr, checkpoint_dir=checkpoint_dir)
 
 

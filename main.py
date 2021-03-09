@@ -13,14 +13,14 @@ train_ds = Vimeo_train.dataset(batch_size=4, random_transform=True)
 valid_ds = Vimeo_valid.dataset(batch_size=1, random_transform=False)
 
 #model 및 optim
-trainer = YnetTrianer(model=Mymodel(scale=scale), checkpoint_dir=f'./ckpt/Unet_scale_%d'%scale)
+trainer = YnetTrianer(model=Mymodel(scale=scale), checkpoint_dir=f'./ckpt/Unet_scale_%d_test'%scale)
 
 #train
 trainer.train(train_ds,
               # valid_ds.take(1000), #앞 1000개만 valid
               valid_ds,
-              steps=500000,
-              evaluate_every=10000)
+              steps=300000,
+              evaluate_every=1000)
 
 # 마지막 최종 psnr 측정
 psnr = trainer.evaluate(valid_ds)
