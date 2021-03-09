@@ -61,17 +61,16 @@ class Trainer:
         # for images, name in tqdm(train_dataset.take(steps - ckpt.step.numpy())): #둘다 크게 상관 없음
         for i, data in enumerate(train_dataset.take(steps - ckpt.step.numpy())):
             progbar.update(i + 1)
-            lr_imgs, hr_img = data
-
-            lr1, lr2, lr3, lr4, lr5, lr6, lr7 = tf.split(lr_imgs,7,axis=0)
-            lr_imgs_concat = tf.concat([lr1, lr2, lr3,
-                                        lr4, lr5, lr6, lr7], axis=-1)
-            lr_imgs_concat = lr_imgs_concat[0]
+            lr1, lr2, lr3, lr4, lr5, lr6, lr7, hr_img = data
+            #
+            # lr_imgs_concat = tf.concat([lr1, lr2, lr3,
+            #                             lr4, lr5, lr6, lr7], axis=-1)
+            # lr_imgs_concat = lr_imgs_concat[0]
             #blur, sharp = images:
 
             ckpt.step.assign_add(1) # step += step
             step = ckpt.step.numpy()
-            loss = self.train_step(lr_imgs_concat, hr_img)  # train 및 loss backward
+            loss = self.train_step(lr1, lr2, lr3, lr4, lr5, lr6, lr7, hr_img)  # train 및 loss backward
             loss_mean(loss)
             if ckpt.step % evaluate_every == 0:
                 loss_value = loss_mean.result()
@@ -94,17 +93,26 @@ class Trainer:
     #텐서플로 2에서는 즉시 실행(eager execution)이 기본적으로 활성화되어 있습니다. 직관적이고 유연한 사용자 인터페이스를 제공하지만 성능과 배포에 비용이 더 듭니다(하나의 연산을 실행할 때는 훨씬 간단하고 빠릅니다).
     #성능을 높이고 이식성이 좋은 모델을 만들려면 tf.function을 사용해 그래프로 변환하세요.
     @tf.function
-    def train_step(self, lr_imgs_concat, hr_img): #loss backword
+    def train_step(self,  lr1, lr2, lr3, lr4, lr5, lr6, lr7, hr_img): #loss backword
         with tf.GradientTape() as tape:
-            lr_imgs_concat = tf.cast(lr_imgs_concat, tf.float32)
+            lr1 = tf.cast(lr1, tf.float32)
+            lr2 = tf.cast(lr2, tf.float32)
+            lr3 = tf.cast(lr3, tf.float32)
+            lr4 = tf.cast(lr4, tf.float32)
+            lr5 = tf.cast(lr5, tf.float32)
+            lr6 = tf.cast(lr6, tf.float32)
+            lr7 = tf.cast(lr7, tf.float32)
             hr_img = tf.cast(hr_img, tf.float32)
 
-            out_img = self.checkpoint.model(lr_imgs_concat, training=True) #여기서 weight sharing 할때 모델 공유?
+            # lr1, lr2, lr3, lr4, lr5, lr6, lr7 = tf.split(lr_imgs, 7, axis=0)
+            # lr1, lr2, lr3, lr4, lr5, lr6, lr7 = lr1[0], lr2[0], lr3[0], lr4[0], lr5[0], lr6[0], lr7[0]
+            out_img = self.checkpoint.model(inputs=[lr1, lr2, lr3, lr4, lr5, lr6, lr7], training=True) #여기서 weight sharing 할때 모델 공유?
             # e.g.
             # y = model(x)
             # x = model(x)
             # loss = x + y
             loss_value = self.loss(out_img, hr_img)
+            # loss_value= 0
 
         gradients = tape.gradient(loss_value, self.checkpoint.model.trainable_variables) # 그라디언트 생성
         self.checkpoint.optimizer.apply_gradients(zip(gradients, self.checkpoint.model.trainable_variables)) #그라디언트 적융 #왜 zip인지는 의문

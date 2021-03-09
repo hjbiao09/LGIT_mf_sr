@@ -19,7 +19,9 @@ class Vimeo:
         return len(self.list)
 
     def dataset(self, batch_size=16, repeat_count=None, random_transform=False):
-        ds = tf.data.Dataset.zip((self.lr_dataset(), self.hr_dataset()))
+        lr_imgs = self.lr_dataset()
+        ds = tf.data.Dataset.zip((lr_imgs[0], lr_imgs[1], lr_imgs[2], lr_imgs[3],
+                                  lr_imgs[4], lr_imgs[5], lr_imgs[6], self.hr_dataset()))
         if random_transform:
             # ds = ds.map(lambda blur, sharp: random_crop(blur, sharp), num_parallel_calls=AUTOTUNE) #num_parallel_calls? #람다 필요?
             ds = ds.map(random_crop, num_parallel_calls=AUTOTUNE) #이것도 됨 위와 차이 없음.
@@ -44,7 +46,6 @@ class Vimeo:
 
     @staticmethod
     def _multi_images_dataset(image_files, frame_num=7):
-
         ds_list = []
         for i in range(frame_num):
             ds = tf.data.Dataset.from_tensor_slices(image_files[i])
@@ -53,13 +54,9 @@ class Vimeo:
             ds = ds.map(lambda x: tf.image.decode_png(x, channels=3),
                         num_parallel_calls=AUTOTUNE)  # 파일 read후 png로 decode -> 이미지 tensor
             ds_list.append(ds)
-        #ds_all = ds_list[0]
-        #for i in range(frame_num-1):
-        #    ds_all = tf.data.Dataset.zip((ds_all, ds_list[i+1]))
-        ds_all = tf.data.Dataset.zip((ds_list[0], ds_list[1], ds_list[2], ds_list[3],
-                                     ds_list[4], ds_list[5], ds_list[6]))
 
-        return ds_all
+
+        return ds_list[0], ds_list[1], ds_list[2], ds_list[3], ds_list[4], ds_list[5], ds_list[6]
 
     @staticmethod
     def _images_files_dataset(image_files):
@@ -92,8 +89,8 @@ class Vimeo:
 
             for i in range(-(self.length), self.length+1):
                 lr_list.append(os.path.join(file_dir, "im%s.png" % str(4 + i)))
-            lr_data_list.append((lr_list))
-        return (lr_data_list)
+            lr_data_list.append(lr_list)
+        return lr_data_list
 
     def _hr_image_files(self):
         images_dir = os.path.join(self.images_dir,"hr")
