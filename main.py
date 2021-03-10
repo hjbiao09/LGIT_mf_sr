@@ -13,7 +13,7 @@ train_ds = Vimeo_train.dataset(batch_size=8, random_transform=False)
 valid_ds = Vimeo_valid.dataset(batch_size=1, random_transform=False)
 
 #model 및 optim
-trainer = YnetTrianer(model=edsr(scale=scale), checkpoint_dir=f'./ckpt/SISR_EDSR_scale_%d_test'%scale)
+trainer = YnetTrianer(model=edsr(scale=scale), checkpoint_dir=f'./ckpt/MFSR_EDSR_scale_%d_test'%scale)
 
 #train
 trainer.train(train_ds,

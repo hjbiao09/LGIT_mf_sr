@@ -1,12 +1,25 @@
-from tensorflow.python.keras.layers import Add, Conv2D, Input, Lambda
+from tensorflow.python.keras.layers import Add, Conv2D, Input, Lambda, Concatenate
 from tensorflow.python.keras.models import Model
 
 from model.common import normalize, denormalize, pixel_shuffle
 
 
 def edsr(scale=4, num_filters=64, num_res_blocks=8, res_block_scaling=None):
-    x_in = Input(shape=(None, None, 3))
-    x = Lambda(normalize)(x_in)
+    x1 = Input(shape=(None, None, 3))
+    x2 = Input(shape=(None, None, 3))
+    x3 = Input(shape=(None, None, 3))
+    x4 = Input(shape=(None, None, 3))
+    x5 = Input(shape=(None, None, 3))
+    x6 = Input(shape=(None, None, 3))
+    x7 = Input(shape=(None, None, 3))
+    lr1 = Lambda(normalize)(x1)
+    lr2 = Lambda(normalize)(x2)
+    lr3 = Lambda(normalize)(x3)
+    lr4 = Lambda(normalize)(x4)
+    lr5 = Lambda(normalize)(x5)
+    lr6 = Lambda(normalize)(x6)
+    lr7 = Lambda(normalize)(x7)
+    x = Concatenate(axis=3)([lr1, lr2, lr3, lr4, lr5, lr6, lr7])
 
     x = b = Conv2D(num_filters, 3, padding='same')(x)
     for i in range(num_res_blocks):
@@ -18,7 +31,7 @@ def edsr(scale=4, num_filters=64, num_res_blocks=8, res_block_scaling=None):
     x = Conv2D(3, 3, padding='same')(x)
 
     x = Lambda(denormalize)(x)
-    return Model(x_in, x, name="edsr")
+    return Model(inputs=[x1, x2, x3, x4, x5, x6, x7], outputs=x, name="edsr")
 
 
 def res_block(x_in, filters, scaling):

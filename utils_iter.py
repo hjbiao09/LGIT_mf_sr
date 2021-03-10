@@ -6,15 +6,15 @@ def resolve_single(model, lr):
     return resolve(model, tf.expand_dims(lr, axis=0))[0]
 
 
-def resolve(model, lr4,):
-    # lr1 = tf.cast(lr1, tf.float32)
-    # lr2 = tf.cast(lr2, tf.float32)
-    # lr3 = tf.cast(lr3, tf.float32)
+def resolve(model, lr1, lr2, lr3, lr4, lr5, lr6, lr7):
+    lr1 = tf.cast(lr1, tf.float32)
+    lr2 = tf.cast(lr2, tf.float32)
+    lr3 = tf.cast(lr3, tf.float32)
     lr4 = tf.cast(lr4, tf.float32)
-    # lr5 = tf.cast(lr5, tf.float32)
-    # lr6 = tf.cast(lr6, tf.float32)
-    # lr7 = tf.cast(lr7, tf.float32)
-    sr_batch = model(inputs=[lr4])
+    lr5 = tf.cast(lr5, tf.float32)
+    lr6 = tf.cast(lr6, tf.float32)
+    lr7 = tf.cast(lr7, tf.float32)
+    sr_batch = model(inputs=[lr1, lr2, lr3, lr4, lr5, lr6, lr7])
     sr_batch = tf.clip_by_value(sr_batch, 0, 255)
     sr_batch = tf.round(sr_batch)
     sr_batch = tf.cast(sr_batch, tf.uint8)
@@ -23,9 +23,9 @@ def resolve(model, lr4,):
 def evaluate(model, dataset):
     psnr_values = []
     for i, images in enumerate(dataset):
-        # lr1, lr2, lr3, lr4, lr5, lr6, lr7, hr = images
-        lr4, hr = images
-        sr = resolve(model,  lr4)
+        lr1, lr2, lr3, lr4, lr5, lr6, lr7, hr = images
+        # lr4, hr = images
+        sr = resolve(model,  lr1, lr2, lr3, lr4, lr5, lr6, lr7)
         psnr_value = psnr(hr, sr)[0]
         psnr_values.append(psnr_value)
         print('\r%04d images are evaluated.' % i, end=' ')
@@ -36,9 +36,9 @@ def save_image(model, dataset, step, first_step=100, folder_name="model_name"):
     if not os.path.exists(path):
         os.mkdir(path)
     for i, images in enumerate(dataset):
-        # lr1, lr2, lr3, lr4, lr5, lr6, lr7, hr = images
-        lr4, hr = images
-        sr_batch = resolve(model, lr4)
+        lr1, lr2, lr3, lr4, lr5, lr6, lr7, hr = images
+        # lr4, hr = images
+        sr_batch = resolve(model, lr1, lr2, lr3, lr4, lr5, lr6, lr7)
         sr_batch = tf.clip_by_value(sr_batch, 0, 255)
         sr_batch = tf.round(sr_batch)
         sr_batch = tf.cast(sr_batch, tf.uint8)

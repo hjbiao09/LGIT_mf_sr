@@ -18,9 +18,9 @@ class Vimeo:
 
 
     def dataset(self, batch_size=16, repeat_count=None, random_transform=True):
-        # ds = tf.data.Dataset.zip((self.lr_dataset(1), self.lr_dataset(2), self.lr_dataset(3), self.lr_dataset(4),
-        #                           self.lr_dataset(5), self.lr_dataset(6), self.lr_dataset(7), self.hr_dataset()))
-        ds = tf.data.Dataset.zip((self.lr_dataset(4), self.hr_dataset()))
+        ds = tf.data.Dataset.zip((self.lr_dataset(1), self.lr_dataset(2), self.lr_dataset(3), self.lr_dataset(4),
+                                  self.lr_dataset(5), self.lr_dataset(6), self.lr_dataset(7), self.hr_dataset()))
+        # ds = tf.data.Dataset.zip((self.lr_dataset(4), self.hr_dataset()))
         if random_transform:
             # ds = ds.map(lambda blur, sharp: random_crop(blur, sharp), num_parallel_calls=AUTOTUNE) #num_parallel_calls? #람다 필요?
             ds = ds.map(random_crop, num_parallel_calls=AUTOTUNE) #이것도 됨 위와 차이 없음.
