@@ -1,7 +1,7 @@
 from Vimeo_dataloader import Vimeo
 from train_step_ver import YnetTrianer
 from train_epoch_ver import YnetTrianer_epoch
-from model.MyModel import Mymodel
+from model.MyModel import edsr
 
 
 scale=4
@@ -9,11 +9,11 @@ scale=4
 Vimeo_train = Vimeo(images_dir="H:/sr_data/vimeo_septuplet/new_sequences", subset="train", scale=scale)
 Vimeo_valid = Vimeo(images_dir="H:/sr_data/vimeo_septuplet/new_sequences", subset="test", scale=scale)
 
-train_ds = Vimeo_train.dataset(batch_size=8, random_transform=True)
+train_ds = Vimeo_train.dataset(batch_size=8, random_transform=False)
 valid_ds = Vimeo_valid.dataset(batch_size=1, random_transform=False)
 
 #model 및 optim
-trainer = YnetTrianer(model=Mymodel(scale=scale), checkpoint_dir=f'./ckpt/Unet_scale_%d_test'%scale)
+trainer = YnetTrianer(model=edsr(scale=scale), checkpoint_dir=f'./ckpt/SISR_EDSR_scale_%d_test'%scale)
 
 #train
 trainer.train(train_ds,
