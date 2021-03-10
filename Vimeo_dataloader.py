@@ -88,7 +88,7 @@ class Vimeo:
 # -----------------------------------------------------------
 
 
-def random_crop(lr1, lr2, lr3, lr4, lr5, lr6, lr7, hr, hr_crop_size=256, scale=2):
+def random_crop(lr1, lr2, lr3, lr4, lr5, lr6, lr7, hr, hr_crop_size=256, scale=4):
     lr_crop_size = hr_crop_size // scale
     lr_img_shape = tf.shape(lr4)[:2]
 

@@ -55,7 +55,7 @@ def DBlock(x_in, filters=64, num_res=8, last=False, scale=2):
         x = resblock(x, filters=filters)
 
     if last:
-        x = BasicConv(x, filters=3*scale**2, relu=False)
+        x = BasicConv(x, filters=48, relu=False)
     else:
         x = BasicConv(x, kernel_size=4, filters=filters//2, transpose=True, stride=(2, 2))
 
@@ -71,7 +71,7 @@ def denormalize_255(x):
 def pixel_shuffle(scale):
     return lambda x: tf.nn.depth_to_space(x, scale)
 
-def Mymodel(scale=2):
+def Mymodel(scale=4):
     x1 = Input(shape=(None, None, 3))
     x2 = Input(shape=(None, None, 3))
     x3 = Input(shape=(None, None, 3))
